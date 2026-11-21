@@ -63,7 +63,8 @@ import androidx.compose.ui.unit.dp
 import com.example.R
 
 /**
- * Modern atmospheric mesh backdrop with layered dynamic spotlights and crisp architectural hairlines.
+ * Calm ceramic backdrop: a flat warm-white ground so the board and cards carry the colour.
+ * The accent parameters are kept so existing callers compile; they are no longer drawn.
  */
 @Composable
 fun TactixAmbientBackdrop(
@@ -72,90 +73,10 @@ fun TactixAmbientBackdrop(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val bgColor = MaterialTheme.colorScheme.background
-    val gridColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.036f)
-
-    val animatedPrimary by animateColorAsState(
-        targetValue = accentPrimary,
-        animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing),
-        label = "ambient_primary",
-    )
-    val animatedSecondary by animateColorAsState(
-        targetValue = accentSecondary,
-        animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing),
-        label = "ambient_secondary",
-    )
-
-    val drift = rememberInfiniteTransition(label = "ambient_drift")
-    val orbShift by drift.animateFloat(
-        initialValue = -0.05f,
-        targetValue = 0.05f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 6000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "orb_shift",
-    )
-
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(bgColor)
-            .drawBehind {
-                // Top-left luminous spotlight
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            animatedPrimary.copy(alpha = 0.22f),
-                            animatedPrimary.copy(alpha = 0.06f),
-                            Color.Transparent,
-                        ),
-                        center = Offset(
-                            x = size.width * (0.16f + orbShift),
-                            y = size.height * 0.08f,
-                        ),
-                        radius = size.maxDimension * 0.62f,
-                    ),
-                )
-                // Bottom-right warm complementary wash
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            animatedSecondary.copy(alpha = 0.16f),
-                            animatedSecondary.copy(alpha = 0.04f),
-                            Color.Transparent,
-                        ),
-                        center = Offset(
-                            x = size.width * (0.86f - orbShift),
-                            y = size.height * 0.82f,
-                        ),
-                        radius = size.maxDimension * 0.56f,
-                    ),
-                )
-                // Subtle architectural cross-grid texture
-                val spacing = 44.dp.toPx()
-                val stroke = 0.8.dp.toPx()
-                var x = spacing
-                while (x < size.width) {
-                    drawLine(
-                        color = gridColor,
-                        start = Offset(x, 0f),
-                        end = Offset(x, size.height),
-                        strokeWidth = stroke,
-                    )
-                    x += spacing
-                }
-                var y = spacing
-                while (y < size.height) {
-                    drawLine(
-                        color = gridColor,
-                        start = Offset(0f, y),
-                        end = Offset(size.width, y),
-                        strokeWidth = stroke,
-                    )
-                    y += spacing
-                }
-            },
+            .background(MaterialTheme.colorScheme.background),
     ) {
         content()
     }

@@ -35,10 +35,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
@@ -68,6 +70,11 @@ import com.example.R
 import com.example.domain.Player
 import com.example.ui.components.ReplayStudioModal
 import com.example.ui.components.TactixAmbientBackdrop
+import com.example.ui.theme.Ceramic
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.semantics.Role
 import com.example.ui.screens.ArchiveScreen
 import com.example.ui.screens.DailyScreen
 import com.example.ui.screens.HomeScreen
@@ -90,9 +97,9 @@ enum class TactixTab(
     val unselectedIcon: ImageVector,
     val testTag: String,
 ) {
-    HOME(R.string.nav_home, Icons.Rounded.Home, Icons.Outlined.Home, "nav_home"),
+    HOME(R.string.nav_home, Icons.Rounded.GridView, Icons.Outlined.GridView, "nav_home"),
     DAILY(R.string.nav_daily, Icons.Rounded.CalendarToday, Icons.Outlined.CalendarToday, "nav_daily"),
-    ARCHIVE(R.string.nav_archive, Icons.Rounded.History, Icons.Outlined.History, "nav_archive"),
+    ARCHIVE(R.string.nav_archive, Icons.Rounded.Person, Icons.Outlined.Person, "nav_archive"),
 }
 
 @Composable
@@ -231,11 +238,8 @@ fun TactixApp(
                                             Intent.createChooser(shareIntent, "Share Tactix Match"),
                                         )
                                     },
-                                    contentBottomPadding = PaddingValues(bottom = 24.dp),
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .statusBarsPadding()
-                                        .navigationBarsPadding(),
+                                    contentBottomPadding = PaddingValues(bottom = 16.dp),
+                                    modifier = Modifier.fillMaxSize(),
                                 )
                             } else {
                                 MainHubScaffold(
@@ -379,8 +383,7 @@ private fun MainHubScaffold(
                     onSelectTab = onSelectTab,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .navigationBarsPadding()
-                        .padding(bottom = 14.dp, start = 20.dp, end = 20.dp),
+                        .fillMaxWidth(),
                 )
             }
         }
@@ -460,77 +463,70 @@ private fun FloatingPillNavBar(
     onSelectTab: (TactixTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Ceramic bottom bar: white, rounded on top, the active tab sits on an obsidian pill.
     Surface(
         modifier = modifier,
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.94f),
-        tonalElevation = 8.dp,
-        shadowElevation = 10.dp,
-        border = BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
-        ),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        color = Ceramic.Card,
+        shadowElevation = 16.dp,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(horizontal = 14.dp)
+                .padding(top = 10.dp, bottom = 12.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             TactixTab.entries.forEach { tab ->
                 val selected = activeTab == tab
-                val bgColor by animateColorAsState(
-                    targetValue = if (selected) {
-                        MaterialTheme.colorScheme.primaryContainer
-                    } else {
-                        Color.Transparent
-                    },
+                val pillColor by animateColorAsState(
+                    targetValue = if (selected) Ceramic.Obsidian else Color.Transparent,
                     animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
                     label = "nav_pill_bg_${tab.name}",
                 )
-                val fgColor by animateColorAsState(
-                    targetValue = if (selected) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
+                val iconColor by animateColorAsState(
+                    targetValue = if (selected) Color.White else Ceramic.Muted,
                     animationSpec = tween(200),
                     label = "nav_pill_fg_${tab.name}",
                 )
-
-                Row(
+                Column(
                     modifier = Modifier
-                        .minimumInteractiveComponentSize()
-                        .clip(CircleShape)
-                        .background(bgColor)
+                        .weight(1f)
+                        .clip(RoundedCornerShape(18.dp))
                         .testTag(tab.testTag)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
+                            role = Role.Tab,
                             onClick = { onSelectTab(tab) },
                         )
-                        .padding(horizontal = if (selected) 18.dp else 14.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(7.dp),
+                        .padding(vertical = 4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
-                    Icon(
-                        imageVector = if (selected) tab.selectedIcon else tab.unselectedIcon,
-                        contentDescription = stringResource(tab.labelRes),
-                        tint = fgColor,
-                        modifier = Modifier.size(22.dp),
-                    )
-                    AnimatedVisibility(
-                        visible = selected,
-                        enter = fadeIn(tween(180)) + expandHorizontally(),
-                        exit = fadeOut(tween(140)) + shrinkHorizontally(),
+                    Box(
+                        modifier = Modifier
+                            .size(width = 60.dp, height = 32.dp)
+                            .clip(CircleShape)
+                            .background(pillColor),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Text(
-                            text = stringResource(tab.labelRes),
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = fgColor,
-                            maxLines = 1,
+                        Icon(
+                            imageVector = if (selected) tab.selectedIcon else tab.unselectedIcon,
+                            contentDescription = null,
+                            tint = iconColor,
+                            modifier = Modifier.size(22.dp),
                         )
                     }
+                    Text(
+                        text = stringResource(tab.labelRes),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+                        color = if (selected) Ceramic.Obsidian else Ceramic.Muted,
+                        maxLines = 1,
+                    )
                 }
             }
         }

@@ -47,6 +47,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -57,6 +59,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.lerp
+import com.example.ui.theme.Ceramic
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -87,9 +91,9 @@ fun TactixBoard(
 ) {
     val expiringCell = snapshot.expiringCell(mode)
     val winningLine = snapshot.winningLine
-    val xColor = MaterialTheme.colorScheme.primary
-    val oColor = MaterialTheme.colorScheme.tertiary
-    val hintColor = MaterialTheme.colorScheme.secondary
+    val xColor = Ceramic.Cobalt
+    val oColor = Ceramic.Vermilion
+    val hintColor = Ceramic.Cobalt
     val errorColor = MaterialTheme.colorScheme.error
 
     val targetAmbient = when {
@@ -175,45 +179,36 @@ fun TactixBoard(
             .offset { IntOffset(shakeOffset.value.roundToInt(), 0) },
         contentAlignment = Alignment.Center,
     ) {
-        val boardShape = RoundedCornerShape(32.dp)
+        val boardShape = RoundedCornerShape(34.dp)
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
-                .drawBehind {
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                ambientColor.copy(alpha = 0.22f),
-                                ambientColor.copy(alpha = 0.05f),
-                                Color.Transparent,
-                            ),
-                            center = center,
-                            radius = size.maxDimension * 0.72f,
-                        ),
-                    )
-                }
-                .border(width = 1.25.dp, brush = rimBrush, shape = boardShape),
+                .shadow(
+                    elevation = 22.dp,
+                    shape = boardShape,
+                    clip = false,
+                    ambientColor = Ceramic.Obsidian.copy(alpha = 0.18f),
+                    spotColor = Ceramic.Obsidian.copy(alpha = 0.28f),
+                ),
             shape = boardShape,
-            color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.92f),
-            tonalElevation = 4.dp,
-            shadowElevation = 6.dp,
+            color = Ceramic.Card,
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(14.dp),
+                    .padding(12.dp),
             ) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(11.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     for (row in 0 until 3) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1f),
-                            horizontalArrangement = Arrangement.spacedBy(11.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             for (col in 0 until 3) {
                                 val index = row * 3 + col
@@ -269,7 +264,7 @@ fun TactixBoard(
                     }
                     val sparkSecondary = if (snapshot.winner == Player.X) oColor else xColor
                     Canvas(modifier = Modifier.fillMaxSize()) {
-                        val gapPx = 11.dp.toPx()
+                        val gapPx = 10.dp.toPx()
                         val cellWidth = (size.width - gapPx * 2f) / 3f
                         val cellHeight = (size.height - gapPx * 2f) / 3f
 
@@ -292,17 +287,17 @@ fun TactixBoard(
                         )
 
                         drawLine(
-                            color = lineColor.copy(alpha = 0.24f),
-                            start = start,
-                            end = currentEnd,
-                            strokeWidth = 24.dp.toPx(),
+                            color = lineColor.copy(alpha = 0.35f),
+                            start = start + Offset(0f, 3.dp.toPx()),
+                            end = currentEnd + Offset(0f, 3.dp.toPx()),
+                            strokeWidth = 9.dp.toPx(),
                             cap = StrokeCap.Round,
                         )
                         drawLine(
-                            color = lineColor,
+                            color = Ceramic.Ivory,
                             start = start,
                             end = currentEnd,
-                            strokeWidth = 8.dp.toPx(),
+                            strokeWidth = 6.dp.toPx(),
                             cap = StrokeCap.Round,
                         )
 
@@ -389,31 +384,23 @@ private fun TactixCell(
         }
     }
 
-    val cellShape = RoundedCornerShape(22.dp)
+    val cellShape = RoundedCornerShape(24.dp)
     val targetBg = when {
         isMisereTrapLine -> MaterialTheme.colorScheme.errorContainer
-        isWinningCell && mark == Player.X -> MaterialTheme.colorScheme.primaryContainer
-        isWinningCell && mark == Player.O -> MaterialTheme.colorScheme.tertiaryContainer
-        isHinted -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)
-        isLastMove && mark != null -> MaterialTheme.colorScheme.surfaceContainerHighest
-        else -> MaterialTheme.colorScheme.surfaceContainerHigh
+        isWinningCell && mark == Player.X -> xColor
+        isWinningCell && mark == Player.O -> oColor
+        isHinted -> Ceramic.CobaltTint
+        isLastMove && mark == Player.X -> Ceramic.CobaltTint
+        isLastMove && mark == Player.O -> Ceramic.VermilionTint
+        else -> Ceramic.Socket
     }
     val cellBgColor by animateColorAsState(
         targetValue = targetBg,
-        animationSpec = tween(240),
+        animationSpec = tween(260),
         label = "cell_bg_$index",
     )
-
-    val cellBorderColor = when {
-        isMisereTrapLine -> MaterialTheme.colorScheme.error.copy(alpha = 0.72f)
-        isWinningCell && mark == Player.X -> xColor.copy(alpha = 0.72f)
-        isWinningCell && mark == Player.O -> oColor.copy(alpha = 0.72f)
-        isHinted -> hintColor.copy(alpha = 0.75f)
-        isExpiring -> (if (mark == Player.X) xColor else oColor).copy(alpha = 0.42f)
-        isLastMove && mark == Player.X -> xColor.copy(alpha = 0.34f)
-        isLastMove && mark == Player.O -> oColor.copy(alpha = 0.34f)
-        else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f)
-    }
+    val solidWinCell = isWinningCell && !isMisereTrapLine
+    val expiringOutline = if (mark == Player.O) oColor else xColor
 
     val coordLabel = remember(row, col) {
         val colChar = ('A'.code + col).toChar()
@@ -437,11 +424,40 @@ private fun TactixCell(
             .scale(pressScale)
             .clip(cellShape)
             .background(cellBgColor)
-            .border(
-                width = if (isWinningCell || isHinted) 1.75.dp else 1.dp,
-                color = cellBorderColor,
-                shape = cellShape,
-            )
+            .drawBehind {
+                val radius = CornerRadius(24.dp.toPx())
+                if (!solidWinCell) {
+                    // Soft inner shade along the top edge so each square reads as a sunken socket.
+                    drawRoundRect(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Ceramic.Obsidian.copy(alpha = 0.07f), Color.Transparent),
+                            startY = 0f,
+                            endY = 12.dp.toPx(),
+                        ),
+                        cornerRadius = radius,
+                    )
+                }
+                if (isExpiring) {
+                    val inset = 1.5.dp.toPx()
+                    drawRoundRect(
+                        color = expiringOutline,
+                        topLeft = Offset(inset, inset),
+                        size = Size(size.width - inset * 2f, size.height - inset * 2f),
+                        cornerRadius = CornerRadius(22.dp.toPx()),
+                        style = Stroke(
+                            width = 2.dp.toPx(),
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(14f, 10f), 0f),
+                        ),
+                    )
+                }
+                if (isHinted) {
+                    drawRoundRect(
+                        color = hintColor,
+                        cornerRadius = radius,
+                        style = Stroke(width = 2.dp.toPx()),
+                    )
+                }
+            }
             .semantics { contentDescription = cellDescription }
             .testTag(testTag)
             .clickable(
@@ -453,42 +469,23 @@ private fun TactixCell(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        if (mark == null && !isHinted) {
-            Text(
-                text = coordLabel,
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.24f),
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(start = 9.dp, top = 7.dp),
-            )
-        }
-
         if (mark != null) {
-            val markColor = if (mark == Player.X) xColor else oColor
+            val markColor = when {
+                solidWinCell -> Ceramic.Ivory
+                mark == Player.X -> xColor
+                else -> oColor
+            }
             val effectiveAlpha = if (isExpiring) pulseAlpha else 1f
             val markScale = if (isExpiring) 0.86f else 1f
 
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(18.dp)
+                    .padding(16.dp)
                     .scale(markScale)
                     .alpha(effectiveAlpha),
             ) {
                 val progress = drawProgress.value.coerceIn(0f, 1.08f)
-                if (isExpiring) {
-                    val dashed = Stroke(
-                        width = 2.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 9f), 0f),
-                    )
-                    drawCircle(
-                        color = markColor.copy(alpha = 0.58f),
-                        radius = size.minDimension * 0.56f,
-                        style = dashed,
-                    )
-                }
-
                 drawStyledPiece(
                     player = mark,
                     skin = skin,
@@ -497,22 +494,7 @@ private fun TactixCell(
                 )
             }
 
-            if (isExpiring) {
-                Surface(
-                    shape = CircleShape,
-                    color = markColor.copy(alpha = 0.16f),
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 5.dp),
-                ) {
-                    Text(
-                        text = "FADE",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                        color = markColor,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
-                    )
-                }
-            } else if (lifePips != null) {
+            if (!isExpiring && lifePips != null && !solidWinCell) {
                 Row(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -583,27 +565,7 @@ fun DrawScope.drawStyledPiece(
     val cy = size.height / 2f
 
     when (skin) {
-        PieceSkin.CLASSIC -> {
-            if (player == Player.X) {
-                val p1 = (progress * 2f).coerceIn(0f, 1f)
-                val p2 = ((progress - 0.32f) / 0.68f).coerceIn(0f, 1f)
-                if (p1 > 0f) {
-                    val end1 = Offset(left + (right - left) * p1, top + (bottom - top) * p1)
-                    drawLine(color.copy(alpha = 0.18f), Offset(left, top), end1, glowPx, StrokeCap.Round)
-                    drawLine(color, Offset(left, top), end1, strokePx, StrokeCap.Round)
-                }
-                if (p2 > 0f) {
-                    val end2 = Offset(right - (right - left) * p2, top + (bottom - top) * p2)
-                    drawLine(color.copy(alpha = 0.18f), Offset(right, top), end2, glowPx, StrokeCap.Round)
-                    drawLine(color, Offset(right, top), end2, strokePx, StrokeCap.Round)
-                }
-            } else {
-                val arcSize = Size(right - left, bottom - top)
-                val sweep = 360f * progress.coerceAtMost(1f)
-                drawArc(color.copy(alpha = 0.18f), -90f, sweep, false, Offset(left, top), arcSize, style = Stroke(glowPx, cap = StrokeCap.Round))
-                drawArc(color, -90f, sweep, false, Offset(left, top), arcSize, style = Stroke(strokePx, cap = StrokeCap.Round))
-            }
-        }
+        PieceSkin.CLASSIC -> drawSculptedPiece(player, color, progress)
 
         PieceSkin.PRISM -> {
             val scale = progress.coerceAtMost(1f)
@@ -683,5 +645,97 @@ fun DrawScope.drawStyledPiece(
                 drawCircle(color = color.copy(alpha = 0.75f), radius = strokePx * 0.34f * scale, center = Offset(cx, cy))
             }
         }
+    }
+}
+
+/**
+ * Ceramic pieces in the style of the app icon: chunky strokes with a light-to-deep gradient,
+ * a soft drop shadow underneath and a thin highlight along the top edge.
+ */
+private fun DrawScope.drawSculptedPiece(
+    player: Player,
+    color: Color,
+    progress: Float,
+) {
+    val dim = size.minDimension
+    val strokePx = dim * 0.24f
+    val pad = dim * 0.17f
+    val left = pad
+    val top = pad
+    val right = size.width - pad
+    val bottom = size.height - pad
+    val light = lerp(color, Color.White, 0.38f)
+    val deep = lerp(color, Color.Black, 0.12f)
+    val body = Brush.linearGradient(
+        colors = listOf(light, deep),
+        start = Offset(0f, 0f),
+        end = Offset(size.width, size.height),
+    )
+    val shadow = lerp(color, Color.Black, 0.55f).copy(alpha = 0.26f)
+    val drop = Offset(0f, dim * 0.07f)
+    val shine = Offset(-dim * 0.025f, -dim * 0.035f)
+    val highlight = Color.White.copy(alpha = 0.45f)
+
+    if (player == Player.X) {
+        val p1 = (progress * 2f).coerceIn(0f, 1f)
+        val p2 = ((progress - 0.32f) / 0.68f).coerceIn(0f, 1f)
+        val s1 = Offset(left, top)
+        val e1 = Offset(left + (right - left) * p1, top + (bottom - top) * p1)
+        val s2 = Offset(right, top)
+        val e2 = Offset(right - (right - left) * p2, top + (bottom - top) * p2)
+        if (p1 > 0f) drawLine(shadow, s1 + drop, e1 + drop, strokePx, StrokeCap.Round)
+        if (p2 > 0f) drawLine(shadow, s2 + drop, e2 + drop, strokePx, StrokeCap.Round)
+        if (p1 > 0f) drawLine(body, s1, e1, strokePx, StrokeCap.Round)
+        if (p2 > 0f) drawLine(body, s2, e2, strokePx, StrokeCap.Round)
+        if (p1 > 0f) drawLine(highlight, s1 + shine, e1 + shine, strokePx * 0.2f, StrokeCap.Round)
+        if (p2 > 0f) drawLine(highlight, s2 + shine, e2 + shine, strokePx * 0.2f, StrokeCap.Round)
+    } else {
+        val inset = strokePx * 0.15f
+        val topLeft = Offset(left + inset, top + inset)
+        val arcSize = Size(right - left - inset * 2f, bottom - top - inset * 2f)
+        val sweep = 360f * progress.coerceIn(0f, 1f)
+        drawArc(
+            color = shadow,
+            startAngle = -90f,
+            sweepAngle = sweep,
+            useCenter = false,
+            topLeft = topLeft + drop,
+            size = arcSize,
+            style = Stroke(width = strokePx, cap = StrokeCap.Round),
+        )
+        drawArc(
+            brush = body,
+            startAngle = -90f,
+            sweepAngle = sweep,
+            useCenter = false,
+            topLeft = topLeft,
+            size = arcSize,
+            style = Stroke(width = strokePx, cap = StrokeCap.Round),
+        )
+        if (progress >= 0.95f) {
+            drawArc(
+                color = highlight,
+                startAngle = 165f,
+                sweepAngle = 75f,
+                useCenter = false,
+                topLeft = topLeft + shine,
+                size = arcSize,
+                style = Stroke(width = strokePx * 0.2f, cap = StrokeCap.Round),
+            )
+        }
+    }
+}
+
+/**
+ * A single sculpted ceramic piece, used for decoration on cards and sheets.
+ */
+@Composable
+fun CeramicPiece(
+    player: Player,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Canvas(modifier = modifier) {
+        drawSculptedPiece(player = player, color = color, progress = 1f)
     }
 }

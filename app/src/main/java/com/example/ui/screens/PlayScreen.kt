@@ -2,17 +2,12 @@ package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -22,12 +17,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -35,36 +34,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.AllInclusive
-import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.EmojiEvents
-import androidx.compose.material.icons.rounded.Flip
-import androidx.compose.material.icons.rounded.Grid3x3
-import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Lightbulb
-import androidx.compose.material.icons.rounded.MobileOff
-import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material.icons.rounded.MoreHoriz
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Share
-import androidx.compose.material.icons.rounded.SmartToy
-import androidx.compose.material.icons.rounded.SwapHoriz
-import androidx.compose.material.icons.rounded.Timer
-import androidx.compose.material.icons.rounded.Tune
-import androidx.compose.material.icons.rounded.Vibration
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,13 +57,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.MatchRecordEntity
 import com.example.domain.AiDifficulty
@@ -86,13 +73,19 @@ import com.example.domain.GameMode
 import com.example.domain.OpponentType
 import com.example.domain.Player
 import com.example.ui.components.AiThinkingPulse
-import com.example.ui.components.PillOption
-import com.example.ui.components.RollingScoreCounter
+import com.example.ui.components.CeramicChoiceChips
+import com.example.ui.components.CeramicIconButton
+import com.example.ui.components.CeramicPiece
+import com.example.ui.components.CeramicPrimaryButton
+import com.example.ui.components.CeramicSecondaryButton
+import com.example.ui.components.CeramicSectionLabel
+import com.example.ui.components.CeramicSegmented
+import com.example.ui.components.CeramicSwitchRow
 import com.example.ui.components.TactixBoard
-import com.example.ui.components.TactixMiniEmblem
-import com.example.ui.components.TactixPillSwitcher
+import com.example.ui.components.modeLook
+import com.example.ui.theme.Ceramic
 import com.example.ui.viewmodel.GameUiState
-import java.util.Locale
+import kotlinx.coroutines.delay
 
 @Composable
 fun PlayScreen(
@@ -113,1127 +106,816 @@ fun PlayScreen(
     contentBottomPadding: PaddingValues = PaddingValues(0.dp),
     modifier: Modifier = Modifier,
 ) {
-    var showQuickSetup by remember { mutableStateOf(false) }
+    var showOptions by remember { mutableStateOf(false) }
+    var showResult by remember { mutableStateOf(false) }
 
-    BoxWithConstraints(
-        modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.TopCenter,
-    ) {
-        val isWide = maxWidth >= 700.dp
-
-        if (isWide) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 28.dp, vertical = 18.dp),
-                horizontalArrangement = Arrangement.spacedBy(32.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .widthIn(max = 420.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    TurnStatusPill(uiState = uiState)
-                    BlitzClockBar(uiState = uiState)
-                    TactixBoard(
-                        snapshot = uiState.snapshot,
-                        mode = uiState.mode,
-                        skin = uiState.selectedSkin,
-                        onCellClick = onCellTap,
-                        enabled = !uiState.isAiThinking && !uiState.snapshot.isGameOver,
-                        hintCellIndex = uiState.activeHint?.cellIndex,
-                        testTagPrefix = "play_board",
-                    )
-                }
-
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .widthIn(max = 430.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                ) {
-                    PlayHeader(
-                        uiState = uiState,
-                        showQuickSetup = showQuickSetup,
-                        onBackToHome = onBackToHome,
-                        onToggleQuickSetup = { showQuickSetup = !showQuickSetup },
-                        onToggleBlitz = onToggleBlitz,
-                        onSwapHumanSide = onSwapHumanSide,
-                        onToggleHaptics = onToggleHaptics,
-                    )
-                    AnimatedVisibility(
-                        visible = showQuickSetup,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically(),
-                    ) {
-                        ModeAndOpponentControls(
-                            uiState = uiState,
-                            onSelectMode = onSelectMode,
-                            onSelectOpponent = onSelectOpponent,
-                            onSelectDifficulty = onSelectDifficulty,
-                        )
-                    }
-                    DuelScoreBar(uiState = uiState)
-                    HintOrResultSection(
-                        uiState = uiState,
-                        onDismissHint = onDismissHint,
-                        onNewRound = onNewRound,
-                        onOpenReplay = onOpenReplay,
-                        onShareResult = onShareResult,
-                    )
-                    PlayActionDock(
-                        uiState = uiState,
-                        onRequestHint = onRequestHint,
-                        onNewRound = onNewRound,
-                    )
-                }
-            }
+    // Let the winning line draw on the board before the result screen takes over.
+    LaunchedEffect(uiState.snapshot.isGameOver, uiState.moveHistory.size) {
+        if (uiState.snapshot.isGameOver) {
+            delay(750)
+            showResult = true
         } else {
+            showResult = false
+        }
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp)
+                .padding(top = 10.dp)
+                .padding(contentBottomPadding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .widthIn(max = 560.dp)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 12.dp)
-                    .padding(contentBottomPadding),
+                    .widthIn(max = 520.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(13.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 PlayHeader(
                     uiState = uiState,
-                    showQuickSetup = showQuickSetup,
                     onBackToHome = onBackToHome,
-                    onToggleQuickSetup = { showQuickSetup = !showQuickSetup },
-                    onToggleBlitz = onToggleBlitz,
-                    onSwapHumanSide = onSwapHumanSide,
-                    onToggleHaptics = onToggleHaptics,
+                    onOpenOptions = { showOptions = true },
                 )
 
-                AnimatedVisibility(
-                    visible = showQuickSetup,
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically(),
+                PlayerCards(uiState = uiState)
+
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
                 ) {
-                    ModeAndOpponentControls(
-                        uiState = uiState,
-                        onSelectMode = onSelectMode,
-                        onSelectOpponent = onSelectOpponent,
-                        onSelectDifficulty = onSelectDifficulty,
-                    )
+                    val viewport = maxHeight
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
+                            .heightIn(min = viewport),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+                    ) {
+                        TurnStatus(uiState = uiState)
+                        BlitzClock(uiState = uiState)
+                        TactixBoard(
+                            snapshot = uiState.snapshot,
+                            mode = uiState.mode,
+                            skin = uiState.selectedSkin,
+                            onCellClick = onCellTap,
+                            enabled = !uiState.isAiThinking && !uiState.snapshot.isGameOver,
+                            hintCellIndex = uiState.activeHint?.cellIndex,
+                            testTagPrefix = "play_board",
+                            modifier = Modifier.padding(vertical = 4.dp),
+                        )
+                        HintCard(uiState = uiState, onDismissHint = onDismissHint)
+                    }
                 }
 
-                DuelScoreBar(uiState = uiState)
-
-                TurnStatusPill(uiState = uiState)
-
-                BlitzClockBar(uiState = uiState)
-
-                TactixBoard(
-                    snapshot = uiState.snapshot,
-                    mode = uiState.mode,
-                    skin = uiState.selectedSkin,
-                    onCellClick = onCellTap,
-                    enabled = !uiState.isAiThinking && !uiState.snapshot.isGameOver,
-                    hintCellIndex = uiState.activeHint?.cellIndex,
-                    testTagPrefix = "play_board",
-                )
-
-                HintOrResultSection(
-                    uiState = uiState,
-                    onDismissHint = onDismissHint,
-                    onNewRound = onNewRound,
-                    onOpenReplay = onOpenReplay,
-                    onShareResult = onShareResult,
-                )
-
-                PlayActionDock(
-                    uiState = uiState,
-                    onRequestHint = onRequestHint,
-                    onNewRound = onNewRound,
-                )
-
-                Text(
-                    text = when (uiState.mode) {
-                        GameMode.INFINITY -> stringResource(R.string.infinity_rule_tip)
-                        GameMode.CLASSIC -> stringResource(R.string.classic_rule_tip)
-                        GameMode.MISERE -> stringResource(R.string.misere_rule_tip)
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
-                    modifier = Modifier.padding(top = 2.dp, bottom = 12.dp),
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    CeramicSecondaryButton(
+                        label = stringResource(R.string.action_hint),
+                        icon = Icons.Rounded.Lightbulb,
+                        iconTint = Ceramic.Cobalt,
+                        onClick = onRequestHint,
+                        enabled = !uiState.isAiThinking && !uiState.snapshot.isGameOver,
+                        testTag = "hint_button",
+                        modifier = Modifier.weight(1f),
+                    )
+                    CeramicSecondaryButton(
+                        label = stringResource(R.string.action_reset),
+                        icon = Icons.Rounded.Refresh,
+                        iconTint = Ceramic.VermilionDeep,
+                        onClick = onNewRound,
+                        testTag = "new_round_button",
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
         }
+
+        AnimatedVisibility(
+            visible = showResult && uiState.snapshot.isGameOver,
+            enter = fadeIn(tween(280)) + scaleIn(initialScale = 0.96f, animationSpec = tween(320)),
+            exit = fadeOut(tween(180)),
+        ) {
+            ResultScreen(
+                uiState = uiState,
+                onBackToHome = onBackToHome,
+                onNewRound = onNewRound,
+                onOpenReplay = onOpenReplay,
+                onShareResult = onShareResult,
+            )
+        }
     }
+
+    if (showOptions) {
+        GameOptionsSheet(
+            uiState = uiState,
+            onSelectMode = onSelectMode,
+            onSelectOpponent = onSelectOpponent,
+            onSelectDifficulty = onSelectDifficulty,
+            onToggleBlitz = onToggleBlitz,
+            onSwapHumanSide = onSwapHumanSide,
+            onToggleHaptics = onToggleHaptics,
+            onDismiss = { showOptions = false },
+        )
+    }
+}
+
+private fun difficultyLabel(difficulty: AiDifficulty): String = when (difficulty) {
+    AiDifficulty.ADAPTIVE -> "Adaptive"
+    AiDifficulty.CASUAL -> "Easy"
+    AiDifficulty.TACTICAL -> "Hard"
+    AiDifficulty.MASTER -> "Master"
 }
 
 @Composable
 private fun PlayHeader(
     uiState: GameUiState,
-    showQuickSetup: Boolean,
     onBackToHome: () -> Unit,
-    onToggleQuickSetup: () -> Unit,
-    onToggleBlitz: () -> Unit,
-    onSwapHumanSide: () -> Unit,
-    onToggleHaptics: () -> Unit,
+    onOpenOptions: () -> Unit,
 ) {
-    val modeTitle = when (uiState.mode) {
-        GameMode.INFINITY -> stringResource(R.string.mode_infinity)
-        GameMode.CLASSIC -> stringResource(R.string.mode_classic)
-        GameMode.MISERE -> stringResource(R.string.mode_misere)
+    val look = modeLook(uiState.mode)
+    val subtitle = if (uiState.opponentType == OpponentType.AI) {
+        val level = if (uiState.aiDifficulty == AiDifficulty.ADAPTIVE) {
+            "Adaptive · ${uiState.adaptiveIntensityLabel}"
+        } else {
+            difficultyLabel(uiState.aiDifficulty)
+        }
+        "vs Computer · $level"
+    } else {
+        "2 players"
     }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        CeramicIconButton(
+            icon = Icons.AutoMirrored.Rounded.ArrowBack,
+            contentDescription = stringResource(R.string.cd_back_to_modes),
+            onClick = onBackToHome,
+            modifier = Modifier.testTag("arena_back_to_modes_button"),
+        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = look.title,
+                style = MaterialTheme.typography.titleLarge,
+                color = Ceramic.Obsidian,
+                maxLines = 1,
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                color = Ceramic.Muted,
+                maxLines = 1,
+            )
+        }
+        CeramicIconButton(
+            icon = Icons.Rounded.MoreHoriz,
+            contentDescription = stringResource(R.string.cd_match_settings),
+            onClick = onOpenOptions,
+            modifier = Modifier.testTag("arena_quick_setup_button"),
+        )
+    }
+}
+
+@Composable
+private fun PlayerCards(uiState: GameUiState) {
+    val isAi = uiState.opponentType == OpponentType.AI
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        listOf(Player.X, Player.O).forEach { player ->
+            val isHuman = !isAi || player == uiState.humanSide
+            val name = when {
+                !isAi -> "Player ${player.symbol}"
+                isHuman -> "You"
+                else -> "Computer"
+            }
+            val active = !uiState.snapshot.isGameOver && uiState.snapshot.currentPlayer == player
+            val status = when {
+                !active -> "Waiting"
+                isAi && !isHuman && uiState.isAiThinking -> "Thinking…"
+                isAi && isHuman -> "Your turn"
+                else -> "To move"
+            }
+            val score = if (player == Player.X) uiState.sessionXWins else uiState.sessionOWins
+            PlayerCard(
+                player = player,
+                name = name,
+                status = status,
+                score = score,
+                active = active,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayerCard(
+    player: Player,
+    name: String,
+    status: String,
+    score: Int,
+    active: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val pieceColor = if (player == Player.X) Ceramic.Cobalt else Ceramic.Vermilion
+    val activeContent = if (player == Player.X) Color.White else Ceramic.Obsidian
+    val background by animateColorAsState(
+        targetValue = if (active) pieceColor else Ceramic.Card,
+        animationSpec = tween(260),
+        label = "player_card_bg_${player.symbol}",
+    )
+    val content = if (active) activeContent else Ceramic.Obsidian
+    val shape = RoundedCornerShape(22.dp)
+    Row(
+        modifier = modifier
+            .shadow(
+                elevation = if (active) 10.dp else 2.dp,
+                shape = shape,
+                clip = false,
+                ambientColor = if (active) pieceColor else Color.Black,
+                spotColor = if (active) pieceColor else Color.Black,
+            )
+            .clip(shape)
+            .background(background)
+            .padding(12.dp)
+            .testTag("player_card_${player.symbol}"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(38.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(if (active) Color.White else Ceramic.Socket),
+            contentAlignment = Alignment.Center,
+        ) {
+            CeramicPiece(player = player, color = pieceColor, modifier = Modifier.size(30.dp))
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = content,
+                maxLines = 1,
+            )
+            Text(
+                text = status,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Medium,
+                color = if (active) content else Ceramic.Muted,
+                maxLines = 1,
+            )
+        }
+        Text(
+            text = score.toString(),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.ExtraBold,
+            color = content,
+        )
+    }
+}
+
+@Composable
+private fun TurnStatus(uiState: GameUiState) {
+    val snapshot = uiState.snapshot
+    val isAi = uiState.opponentType == OpponentType.AI
+    val title = when {
+        snapshot.endedByTimeout -> stringResource(R.string.status_timeout)
+        snapshot.isGameOver -> outcomeHeadline(uiState)
+        uiState.isAiThinking -> "Thinking…"
+        isAi -> stringResource(R.string.status_your_turn)
+        else -> "${snapshot.currentPlayer.symbol} to move"
+    }
+    val expiring = snapshot.expiringCell(uiState.mode)
+    val tip = when {
+        snapshot.isGameOver -> "${uiState.moveHistory.size} moves played"
+        uiState.mode == GameMode.INFINITY && expiring != null ->
+            if (isAi && snapshot.currentPlayer == uiState.humanSide) {
+                "Your faded ${snapshot.currentPlayer.symbol} vanishes when you play."
+            } else {
+                "The faded ${snapshot.currentPlayer.symbol} vanishes on this move."
+            }
+        uiState.mode == GameMode.INFINITY -> "Only 3 marks stay on the board."
+        uiState.mode == GameMode.CLASSIC -> "Get three in a row to win."
+        else -> "Three in a row loses. Trap your rival."
+    }
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.weight(1f),
         ) {
-            FilledTonalIconButton(
-                onClick = onBackToHome,
-                colors = IconButtonDefaults.filledTonalIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
-                ),
+            if (uiState.isAiThinking) {
+                AiThinkingPulse(color = Ceramic.Vermilion)
+            }
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineMedium,
+                color = Ceramic.Obsidian,
+                textAlign = TextAlign.Center,
+            )
+        }
+        Text(
+            text = tip,
+            style = MaterialTheme.typography.bodyMedium,
+            color = Ceramic.Muted,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun BlitzClock(uiState: GameUiState) {
+    if (!uiState.isBlitzEnabled) return
+    val urgent = uiState.blitzRemainingMs <= 1_800L && uiState.isBlitzClockRunning
+    val fill by animateFloatAsState(
+        targetValue = uiState.blitzProgress,
+        animationSpec = tween(120),
+        label = "blitz_fill",
+    )
+    val fillColor = if (urgent) Ceramic.Vermilion else Ceramic.Cobalt
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("blitz_clock"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(10.dp)
+                .clip(CircleShape)
+                .background(Ceramic.Socket),
+        ) {
+            Box(
                 modifier = Modifier
-                    .size(42.dp)
-                    .minimumInteractiveComponentSize()
-                    .testTag("arena_back_to_modes_button"),
+                    .fillMaxHeight()
+                    .fillMaxWidth(fill.coerceIn(0f, 1f))
+                    .clip(CircleShape)
+                    .background(fillColor),
+            )
+        }
+        val seconds = (uiState.blitzRemainingMs / 100L) / 10f
+        Text(
+            text = String.format(java.util.Locale.UK, "%.1fs", seconds),
+            style = MaterialTheme.typography.labelLarge,
+            color = if (urgent) Ceramic.VermilionDeep else Ceramic.Obsidian,
+        )
+    }
+}
+
+@Composable
+private fun HintCard(uiState: GameUiState, onDismissHint: () -> Unit) {
+    val hint = uiState.activeHint
+    AnimatedVisibility(
+        visible = hint != null && !uiState.snapshot.isGameOver,
+        enter = fadeIn(),
+        exit = fadeOut(),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(4.dp, RoundedCornerShape(22.dp), clip = false)
+                .clip(RoundedCornerShape(22.dp))
+                .background(Ceramic.Card)
+                .padding(start = 14.dp, top = 10.dp, bottom = 10.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Ceramic.CobaltTint),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = stringResource(R.string.cd_back_to_modes),
+                    imageVector = Icons.Rounded.Lightbulb,
+                    contentDescription = null,
+                    tint = Ceramic.Cobalt,
                     modifier = Modifier.size(20.dp),
                 )
             }
-
-            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text(
-                    text = modeTitle,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    maxLines = 1,
-                )
-                if (uiState.opponentType == OpponentType.AI) {
-                    val tierLabel = when (uiState.aiDifficulty) {
-                        AiDifficulty.ADAPTIVE -> "Adaptive • ${uiState.adaptiveIntensityLabel}"
-                        AiDifficulty.CASUAL -> "Easy"
-                        AiDifficulty.TACTICAL -> "Hard"
-                        AiDifficulty.MASTER -> "Master"
-                    }
-                    Text(
-                        text = "$tierLabel  •  ${uiState.playerElo} Rating",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1,
-                    )
-                } else {
-                    Text(
-                        text = "2 Players",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                    )
-                }
-            }
-        }
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            // Collapsible quick match setup drawer toggle
-            FilledTonalIconButton(
-                onClick = onToggleQuickSetup,
-                colors = IconButtonDefaults.filledTonalIconButtonColors(
-                    containerColor = if (showQuickSetup) {
-                        MaterialTheme.colorScheme.secondaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHigh
-                    },
-                    contentColor = if (showQuickSetup) {
-                        MaterialTheme.colorScheme.onSecondaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                ),
-                modifier = Modifier
-                    .size(40.dp)
-                    .testTag("arena_quick_setup_button"),
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Tune,
-                    contentDescription = stringResource(R.string.cd_match_settings),
-                    modifier = Modifier.size(19.dp),
-                )
-            }
-
-            // 5-second Blitz Clock toggle pill
-            FilledTonalIconButton(
-                onClick = onToggleBlitz,
-                colors = IconButtonDefaults.filledTonalIconButtonColors(
-                    containerColor = if (uiState.isBlitzEnabled) {
-                        MaterialTheme.colorScheme.tertiaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHigh
-                    },
-                    contentColor = if (uiState.isBlitzEnabled) {
-                        MaterialTheme.colorScheme.onTertiaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                ),
-                modifier = Modifier
-                    .size(40.dp)
-                    .testTag("blitz_toggle_button"),
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Timer,
-                    contentDescription = stringResource(R.string.cd_toggle_blitz),
-                    modifier = Modifier.size(19.dp),
-                )
-            }
-
-            if (uiState.opponentType == OpponentType.AI) {
-                FilledTonalIconButton(
-                    onClick = onSwapHumanSide,
-                    colors = IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    ),
-                    modifier = Modifier
-                        .size(40.dp)
-                        .testTag("swap_sides_button"),
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.SwapHoriz,
-                        contentDescription = stringResource(R.string.cd_swap_sides),
-                        modifier = Modifier.size(19.dp),
-                    )
-                }
-            }
-
-            FilledTonalIconButton(
-                onClick = onToggleHaptics,
-                colors = IconButtonDefaults.filledTonalIconButtonColors(
-                    containerColor = if (uiState.hapticsEnabled) {
-                        MaterialTheme.colorScheme.primaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHigh
-                    },
-                    contentColor = if (uiState.hapticsEnabled) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                ),
-                modifier = Modifier
-                    .size(40.dp)
-                    .testTag("haptics_toggle_button"),
-            ) {
-                Icon(
-                    imageVector = if (uiState.hapticsEnabled) Icons.Rounded.Vibration else Icons.Rounded.MobileOff,
-                    contentDescription = stringResource(R.string.cd_toggle_haptics),
-                    modifier = Modifier.size(19.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun BlitzClockBar(uiState: GameUiState) {
-    AnimatedVisibility(
-        visible = uiState.isBlitzEnabled,
-        enter = fadeIn() + expandVertically(),
-        exit = fadeOut() + shrinkVertically(),
-    ) {
-        val urgent = uiState.blitzRemainingMs <= 1_800L && uiState.isBlitzClockRunning
-        val barColor by animateColorAsState(
-            targetValue = when {
-                urgent -> MaterialTheme.colorScheme.error
-                uiState.isBlitzClockRunning -> MaterialTheme.colorScheme.tertiary
-                else -> MaterialTheme.colorScheme.primary
-            },
-            animationSpec = tween(220),
-            label = "blitz_bar_color",
-        )
-        val animatedProgress by animateFloatAsState(
-            targetValue = uiState.blitzProgress,
-            animationSpec = tween(60),
-            label = "blitz_bar_progress",
-        )
-        val secondsText = String.format(Locale.US, "%.1fs", uiState.blitzRemainingMs / 1000f)
-
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.9f),
-            border = BorderStroke(1.dp, barColor.copy(alpha = 0.4f)),
-            modifier = Modifier
-                .fillMaxWidth()
-                .widthIn(max = 396.dp),
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Timer,
-                    contentDescription = null,
-                    tint = barColor,
-                    modifier = Modifier.size(16.dp),
-                )
-                LinearProgressIndicator(
-                    progress = { animatedProgress },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(6.dp)
-                        .clip(CircleShape),
-                    color = barColor,
-                    trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    strokeCap = StrokeCap.Round,
-                )
-                Text(
-                    text = if (uiState.isBlitzClockRunning) secondsText else "5.0s",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = barColor,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ModeAndOpponentControls(
-    uiState: GameUiState,
-    onSelectMode: (GameMode) -> Unit,
-    onSelectOpponent: (OpponentType) -> Unit,
-    onSelectDifficulty: (AiDifficulty) -> Unit,
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(9.dp),
-    ) {
-        // 3-Mode Selector: Infinity | Classic | Misère
-        TactixPillSwitcher(
-            options = listOf(
-                PillOption(
-                    value = GameMode.INFINITY,
-                    label = stringResource(R.string.mode_infinity),
-                    icon = Icons.Rounded.AllInclusive,
-                    testTag = "mode_infinity_button",
-                ),
-                PillOption(
-                    value = GameMode.CLASSIC,
-                    label = stringResource(R.string.mode_classic),
-                    icon = Icons.Rounded.Grid3x3,
-                    testTag = "mode_classic_button",
-                ),
-                PillOption(
-                    value = GameMode.MISERE,
-                    label = stringResource(R.string.mode_misere),
-                    icon = Icons.Rounded.Flip,
-                    testTag = "mode_misere_button",
-                ),
-            ),
-            selected = uiState.mode,
-            onSelect = onSelectMode,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            TactixPillSwitcher(
-                options = listOf(
-                    PillOption(
-                        value = OpponentType.AI,
-                        label = stringResource(R.string.opponent_ai),
-                        icon = Icons.Rounded.SmartToy,
-                        testTag = "opponent_ai_button",
-                    ),
-                    PillOption(
-                        value = OpponentType.PASS_AND_PLAY,
-                        label = stringResource(R.string.opponent_pass_play),
-                        icon = Icons.Rounded.Groups,
-                        testTag = "opponent_pvp_button",
-                    ),
-                ),
-                selected = uiState.opponentType,
-                onSelect = onSelectOpponent,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-
-        AnimatedVisibility(
-            visible = uiState.opponentType == OpponentType.AI,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically(),
-        ) {
-            val tiers = listOf(
-                AiDifficulty.ADAPTIVE to stringResource(R.string.ai_adaptive),
-                AiDifficulty.CASUAL to stringResource(R.string.ai_casual),
-                AiDifficulty.TACTICAL to stringResource(R.string.ai_tactical),
-                AiDifficulty.MASTER to stringResource(R.string.ai_master),
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(7.dp),
-            ) {
-                tiers.forEach { (difficulty, label) ->
-                    val selected = uiState.aiDifficulty == difficulty
-                    val pillBg by animateColorAsState(
-                        targetValue = if (selected) {
-                            if (difficulty == AiDifficulty.MASTER) {
-                                MaterialTheme.colorScheme.tertiaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.secondaryContainer
-                            }
-                        } else {
-                            MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.8f)
-                        },
-                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                        label = "tier_bg_${difficulty.name}",
-                    )
-                    val pillFg by animateColorAsState(
-                        targetValue = if (selected) {
-                            if (difficulty == AiDifficulty.MASTER) {
-                                MaterialTheme.colorScheme.onTertiaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.onSecondaryContainer
-                            }
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        animationSpec = tween(180),
-                        label = "tier_fg_${difficulty.name}",
-                    )
-                    val borderColor = if (selected) {
-                        if (difficulty == AiDifficulty.MASTER) {
-                            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.55f)
-                        } else {
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
-                        }
-                    } else {
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(36.dp)
-                            .minimumInteractiveComponentSize()
-                            .clip(CircleShape)
-                            .background(pillBg)
-                            .border(1.dp, borderColor, CircleShape)
-                            .testTag("ai_tier_${difficulty.name.lowercase()}")
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = { onSelectDifficulty(difficulty) },
-                            ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(3.dp),
-                        ) {
-                            if (difficulty == AiDifficulty.ADAPTIVE && selected) {
-                                Icon(
-                                    imageVector = Icons.Rounded.AutoAwesome,
-                                    contentDescription = null,
-                                    tint = pillFg,
-                                    modifier = Modifier.size(13.dp),
-                                )
-                            }
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                                color = pillFg,
-                                maxLines = 1,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DuelScoreBar(uiState: GameUiState) {
-    val isXTurn = !uiState.snapshot.isGameOver && uiState.snapshot.currentPlayer == Player.X
-    val isOTurn = !uiState.snapshot.isGameOver && uiState.snapshot.currentPlayer == Player.O
-
-    val xLabel = when {
-        uiState.opponentType == OpponentType.PASS_AND_PLAY -> "PLAYER X"
-        uiState.humanSide == Player.X -> "YOU • X"
-        else -> "RIVAL • X"
-    }
-    val oLabel = when {
-        uiState.opponentType == OpponentType.PASS_AND_PLAY -> "PLAYER O"
-        uiState.humanSide == Player.O -> "YOU • O"
-        else -> "RIVAL • O"
-    }
-
-    val xBg by animateColorAsState(
-        targetValue = if (isXTurn) {
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f)
-        } else {
-            MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.85f)
-        },
-        animationSpec = tween(260),
-        label = "x_score_bg",
-    )
-    val oBg by animateColorAsState(
-        targetValue = if (isOTurn) {
-            MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.92f)
-        } else {
-            MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.85f)
-        },
-        animationSpec = tween(260),
-        label = "o_score_bg",
-    )
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Surface(
-            modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(22.dp),
-            color = xBg,
-            border = BorderStroke(
-                width = if (isXTurn) 1.5.dp else 1.dp,
-                color = if (isXTurn) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                },
-            ),
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        text = xLabel,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (isXTurn) {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                    )
-                    Box(
-                        modifier = Modifier
-                            .width(18.dp)
-                            .height(3.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (isXTurn) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
-                                },
-                            ),
-                    )
-                }
-                RollingScoreCounter(
-                    count = uiState.sessionXWins,
-                    color = if (isXTurn) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    },
-                )
-            }
-        }
-
-        if (uiState.mode != GameMode.INFINITY) {
-            Surface(
-                shape = RoundedCornerShape(18.dp),
-                color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.85f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        text = "DRAW",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text = uiState.sessionDraws.toString(),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-            }
-        }
-
-        Surface(
-            modifier = Modifier.weight(1f),
-            shape = RoundedCornerShape(22.dp),
-            color = oBg,
-            border = BorderStroke(
-                width = if (isOTurn) 1.5.dp else 1.dp,
-                color = if (isOTurn) {
-                    MaterialTheme.colorScheme.tertiary
-                } else {
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                },
-            ),
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                RollingScoreCounter(
-                    count = uiState.sessionOWins,
-                    color = if (isOTurn) {
-                        MaterialTheme.colorScheme.onTertiaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    },
-                )
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) {
-                    Text(
-                        text = oLabel,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (isOTurn) {
-                            MaterialTheme.colorScheme.onTertiaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                    )
-                    Box(
-                        modifier = Modifier
-                            .width(18.dp)
-                            .height(3.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (isOTurn) {
-                                    MaterialTheme.colorScheme.tertiary
-                                } else {
-                                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.25f)
-                                },
-                            ),
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun TurnStatusPill(uiState: GameUiState) {
-    val snapshot = uiState.snapshot
-    val text = when {
-        snapshot.endedByTimeout -> stringResource(R.string.status_timeout)
-        snapshot.winner != null -> {
-            if (uiState.opponentType == OpponentType.AI) {
-                if (snapshot.winner == uiState.humanSide) {
-                    stringResource(R.string.status_you_win)
-                } else {
-                    stringResource(R.string.status_ai_wins)
-                }
-            } else {
-                if (snapshot.winner == Player.X) {
-                    stringResource(R.string.status_x_wins)
-                } else {
-                    stringResource(R.string.status_o_wins)
-                }
-            }
-        }
-        snapshot.isDraw -> stringResource(R.string.status_draw)
-        uiState.isAiThinking -> stringResource(R.string.status_ai_thinking)
-        uiState.opponentType == OpponentType.AI -> stringResource(R.string.status_your_turn)
-        snapshot.currentPlayer == Player.X -> stringResource(R.string.status_player_x_turn)
-        else -> stringResource(R.string.status_player_o_turn)
-    }
-
-    val dotColor = when {
-        snapshot.endedByTimeout -> MaterialTheme.colorScheme.error
-        snapshot.winner == Player.X -> MaterialTheme.colorScheme.primary
-        snapshot.winner == Player.O -> MaterialTheme.colorScheme.tertiary
-        snapshot.isDraw -> MaterialTheme.colorScheme.outline
-        snapshot.currentPlayer == Player.X -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.tertiary
-    }
-
-    Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.9f),
-        border = BorderStroke(1.dp, dotColor.copy(alpha = 0.35f)),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 7.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            if (uiState.isAiThinking) {
-                AiThinkingPulse(color = dotColor)
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(dotColor),
-                )
-            }
             Text(
-                text = text,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface,
+                text = hint?.reason.orEmpty(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = Ceramic.Obsidian,
+                modifier = Modifier.weight(1f),
             )
-            if (uiState.mode == GameMode.INFINITY && snapshot.expiringCell(uiState.mode) != null) {
-                Text(
-                    text = "• Fade Active",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = dotColor,
-                )
-            } else if (uiState.mode == GameMode.MISERE && !snapshot.isGameOver) {
-                Text(
-                    text = "• Avoid 3-in-a-row",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            IconButton(onClick = onDismissHint) {
+                Icon(
+                    imageVector = Icons.Rounded.Close,
+                    contentDescription = "Dismiss hint",
+                    tint = Ceramic.Muted,
                 )
             }
         }
     }
 }
 
+private fun outcomeHeadline(uiState: GameUiState): String {
+    val snapshot = uiState.snapshot
+    val isAi = uiState.opponentType == OpponentType.AI
+    val misere = uiState.mode == GameMode.MISERE
+    return when {
+        snapshot.isDraw -> "Tie game"
+        isAi && snapshot.winner == uiState.humanSide -> if (misere) "Trap sprung!" else "You win!"
+        isAi && snapshot.endedByTimeout -> "Time’s up"
+        isAi -> if (misere) "Caught in three" else "Outplayed"
+        else -> "${snapshot.winner?.symbol ?: "X"} wins!"
+    }
+}
+
+/**
+ * Full-screen result. A human win turns the screen cobalt, a loss or tie turns it obsidian,
+ * and in two-player games the winner's colour takes over.
+ */
 @Composable
-private fun HintOrResultSection(
+private fun ResultScreen(
     uiState: GameUiState,
-    onDismissHint: () -> Unit,
+    onBackToHome: () -> Unit,
     onNewRound: () -> Unit,
     onOpenReplay: (MatchRecordEntity) -> Unit,
     onShareResult: () -> Unit,
 ) {
-    AnimatedVisibility(
-        visible = uiState.activeHint != null && !uiState.snapshot.isGameOver,
-        enter = fadeIn() + expandVertically(),
-        exit = fadeOut() + shrinkVertically(),
+    val snapshot = uiState.snapshot
+    val isAi = uiState.opponentType == OpponentType.AI
+    val humanWon = isAi && snapshot.winner == uiState.humanSide
+    val background = when {
+        snapshot.isDraw -> Ceramic.Obsidian
+        isAi -> if (humanWon) Ceramic.Cobalt else Ceramic.Obsidian
+        snapshot.winner == Player.O -> Ceramic.Vermilion
+        else -> Ceramic.Cobalt
+    }
+    val content = if (background == Ceramic.Vermilion) Ceramic.Obsidian else Color.White
+    val panel = when (background) {
+        Ceramic.Vermilion -> Ceramic.Obsidian.copy(alpha = 0.12f)
+        Ceramic.Obsidian -> Color.White.copy(alpha = 0.10f)
+        else -> Ceramic.Obsidian.copy(alpha = 0.20f)
+    }
+    val look = modeLook(uiState.mode)
+    val scoreLine = if (isAi) {
+        val you = if (uiState.humanSide == Player.X) uiState.sessionXWins else uiState.sessionOWins
+        val cpu = if (uiState.humanSide == Player.X) uiState.sessionOWins else uiState.sessionXWins
+        "You $you · Computer $cpu"
+    } else {
+        "X ${uiState.sessionXWins} · O ${uiState.sessionOWins}"
+    }
+
+    val stats = buildList {
+        uiState.lastAccuracyPercent?.let { add("$it%" to "Accuracy") }
+        uiState.lastEloDelta?.let { add((if (it >= 0) "+$it" else "$it") to "Rating") }
+        if (humanWon && uiState.currentWinStreak > 0) {
+            add(uiState.currentWinStreak.toString() to "Win streak")
+        } else {
+            add(uiState.moveHistory.size.toString() to "Moves")
+        }
+    }.take(3)
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(background)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {},
+            )
+            .testTag("result_screen"),
     ) {
-        uiState.activeHint?.let { hint ->
-            Surface(
-                shape = RoundedCornerShape(22.dp),
-                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.94f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.45f)),
-                modifier = Modifier.fillMaxWidth(),
+        if (background != Ceramic.Obsidian || humanWon) {
+            CeramicPiece(
+                player = Player.X,
+                color = Ceramic.Ivory,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 18.dp, y = 110.dp)
+                    .size(66.dp)
+                    .rotate(22f),
+            )
+        }
+        CeramicPiece(
+            player = Player.O,
+            color = if (background == Ceramic.Vermilion) Ceramic.Cobalt else Ceramic.Vermilion,
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .offset(x = (-22).dp, y = (-40).dp)
+                .size(72.dp)
+                .rotate(-20f),
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 520.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row(
-                    modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                CeramicIconButton(
+                    icon = Icons.AutoMirrored.Rounded.ArrowBack,
+                    contentDescription = stringResource(R.string.cd_back_to_modes),
+                    onClick = onBackToHome,
+                    container = panel,
+                    tint = content,
+                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(34.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Lightbulb,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
                     Text(
-                        text = hint.reason,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.weight(1f),
+                        text = look.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = content,
                     )
-                    IconButton(onClick = onDismissHint) {
-                        Icon(
-                            imageVector = Icons.Rounded.Close,
-                            contentDescription = "Dismiss hint",
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    Text(
+                        text = scoreLine,
+                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                        fontWeight = FontWeight.Medium,
+                        color = content,
+                    )
+                }
+                Spacer(modifier = Modifier.size(44.dp))
+            }
+
+            TactixBoard(
+                snapshot = snapshot,
+                mode = uiState.mode,
+                skin = uiState.selectedSkin,
+                onCellClick = {},
+                enabled = false,
+                testTagPrefix = "result_board",
+                modifier = Modifier.widthIn(max = 280.dp),
+            )
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = if (snapshot.endedByTimeout && !humanWon) {
+                        stringResource(R.string.status_timeout)
+                    } else {
+                        outcomeHeadline(uiState)
+                    },
+                    style = MaterialTheme.typography.displaySmall.copy(fontSize = 40.sp, lineHeight = 44.sp),
+                    color = content,
+                    textAlign = TextAlign.Center,
+                )
+                Text(
+                    text = "${uiState.moveHistory.size} moves · ${look.title}" +
+                        if (uiState.isBlitzEnabled) " · Blitz" else "",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = content,
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 520.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                stats.forEach { (value, label) ->
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(panel)
+                            .padding(vertical = 14.dp, horizontal = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(3.dp),
+                    ) {
+                        Text(
+                            text = value,
+                            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 20.sp),
+                            color = content,
+                        )
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = content,
                         )
                     }
                 }
             }
-        }
-    }
 
-    AnimatedVisibility(
-        visible = uiState.snapshot.isGameOver,
-        enter = fadeIn() + expandVertically(spring(dampingRatio = Spring.DampingRatioMediumBouncy)),
-        exit = fadeOut() + shrinkVertically(),
-    ) {
-        val resultAccent = when {
-            uiState.snapshot.endedByTimeout -> MaterialTheme.colorScheme.error
-            uiState.snapshot.winner == Player.X -> MaterialTheme.colorScheme.primary
-            uiState.snapshot.winner == Player.O -> MaterialTheme.colorScheme.tertiary
-            else -> MaterialTheme.colorScheme.outline
-        }
-        Surface(
-            shape = RoundedCornerShape(26.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            border = BorderStroke(1.2.dp, resultAccent.copy(alpha = 0.42f)),
-            tonalElevation = 4.dp,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Box(
+            if (uiState.newlyUnlockedMedals.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 520.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(panel)
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.EmojiEvents,
+                        contentDescription = null,
+                        tint = content,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Text(
+                        text = "Medal unlocked: " + uiState.newlyUnlockedMedals.joinToString(", ") { it.title },
+                        style = MaterialTheme.typography.labelLarge,
+                        color = content,
+                    )
+                }
+            }
+
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                resultAccent.copy(alpha = 0.12f),
-                                Color.Transparent,
-                            ),
-                        ),
-                    ),
+                    .widthIn(max = 520.dp)
+                    .padding(top = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Column(
-                    modifier = Modifier.padding(18.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(
+                CeramicPrimaryButton(
+                    label = stringResource(R.string.action_play_again),
+                    onClick = onNewRound,
+                    icon = Icons.Rounded.Refresh,
+                    testTag = "play_again_button",
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    val saved = uiState.lastSavedMatch
+                    if (saved != null) {
+                        CeramicSecondaryButton(
+                            label = stringResource(R.string.action_replay),
+                            icon = Icons.Rounded.PlayArrow,
+                            iconTint = content,
+                            onClick = { onOpenReplay(saved) },
+                            container = panel,
+                            content = content,
+                            testTag = "replay_last_match_button",
                             modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(2.dp),
-                        ) {
-                            val headline = when {
-                                uiState.snapshot.endedByTimeout -> "Time's Up!"
-                                uiState.snapshot.isDraw -> "Tie Game"
-                                uiState.opponentType == OpponentType.AI && uiState.snapshot.winner == uiState.humanSide ->
-                                    if (uiState.mode == GameMode.MISERE) "Trap Sprung — You Win!" else "Clean Victory!"
-                                uiState.opponentType == OpponentType.AI ->
-                                    if (uiState.mode == GameMode.MISERE) "Caught in 3-in-a-Row!" else "Outplayed — Try Again"
-                                uiState.snapshot.winner == Player.X -> "Player X Wins!"
-                                else -> "Player O Wins!"
-                            }
-                            Text(
-                                text = headline,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            val modeName = when (uiState.mode) {
-                                GameMode.INFINITY -> "Infinity"
-                                GameMode.CLASSIC -> "Classic"
-                                GameMode.MISERE -> "Misère"
-                            }
-                            Text(
-                                text = "${uiState.moveHistory.size} moves  •  $modeName" +
-                                    if (uiState.isBlitzEnabled) "  •  5s Blitz" else "",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-
-                        FilledTonalIconButton(
-                            onClick = onShareResult,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .testTag("share_result_button"),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Share,
-                                contentDescription = stringResource(R.string.cd_share_match),
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
+                        )
                     }
-
-                    // Accuracy & Elo Delta chips
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        uiState.lastAccuracyPercent?.let { acc ->
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                            ) {
-                                Text(
-                                    text = "$acc% ACCURACY",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                )
-                            }
-                        }
-
-                        uiState.lastEloDelta?.let { delta ->
-                            val sign = if (delta >= 0) "+" else ""
-                            Surface(
-                                shape = CircleShape,
-                                color = if (delta >= 0) {
-                                    MaterialTheme.colorScheme.primaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.tertiaryContainer
-                                },
-                            ) {
-                                Text(
-                                    text = "$sign$delta ELO",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (delta >= 0) {
-                                        MaterialTheme.colorScheme.onPrimaryContainer
-                                    } else {
-                                        MaterialTheme.colorScheme.onTertiaryContainer
-                                    },
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                )
-                            }
-                        }
-                    }
-
-                    // Newly unlocked Mastery Medal banner
-                    if (uiState.newlyUnlockedMedals.isNotEmpty()) {
-                        Surface(
-                            shape = RoundedCornerShape(14.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.EmojiEvents,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                                Text(
-                                    text = "Trophy Unlocked: ${uiState.newlyUnlockedMedals.joinToString(", ") { it.title }}",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                )
-                            }
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        val saved = uiState.lastSavedMatch
-                        if (saved != null) {
-                            FilledTonalButton(
-                                onClick = { onOpenReplay(saved) },
-                                shape = CircleShape,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(48.dp)
-                                    .testTag("replay_last_match_button"),
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.PlayCircle,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(stringResource(R.string.action_replay))
-                            }
-                        }
-                        Button(
-                            onClick = onNewRound,
-                            shape = CircleShape,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(48.dp)
-                                .testTag("play_again_button"),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Refresh,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(stringResource(R.string.action_play_again))
-                        }
-                    }
+                    CeramicSecondaryButton(
+                        label = "Share",
+                        icon = Icons.Rounded.Share,
+                        iconTint = content,
+                        onClick = onShareResult,
+                        container = panel,
+                        content = content,
+                        testTag = "share_result_button",
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PlayActionDock(
+private fun GameOptionsSheet(
     uiState: GameUiState,
-    onRequestHint: () -> Unit,
-    onNewRound: () -> Unit,
+    onSelectMode: (GameMode) -> Unit,
+    onSelectOpponent: (OpponentType) -> Unit,
+    onSelectDifficulty: (AiDifficulty) -> Unit,
+    onToggleBlitz: () -> Unit,
+    onSwapHumanSide: () -> Unit,
+    onToggleHaptics: () -> Unit,
+    onDismiss: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = RoundedCornerShape(topStart = 34.dp, topEnd = 34.dp),
+        containerColor = Ceramic.Card,
     ) {
-        FilledTonalButton(
-            onClick = onRequestHint,
-            enabled = !uiState.isAiThinking && !uiState.snapshot.isGameOver,
-            shape = CircleShape,
+        Column(
             modifier = Modifier
-                .weight(1f)
-                .height(48.dp)
-                .testTag("hint_button"),
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 22.dp)
+                .padding(bottom = 28.dp)
+                .navigationBarsPadding()
+                .testTag("game_options_sheet"),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
-            Icon(
-                imageVector = Icons.Rounded.Lightbulb,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
+            Text(
+                text = "Game options",
+                style = MaterialTheme.typography.headlineSmall,
+                color = Ceramic.Obsidian,
             )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(stringResource(R.string.action_hint))
-        }
+            Text(
+                text = "Changing the mode, opponent or difficulty starts a new round.",
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                color = Ceramic.Muted,
+            )
 
-        OutlinedButton(
-            onClick = onNewRound,
-            shape = CircleShape,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            modifier = Modifier
-                .weight(1f)
-                .height(48.dp)
-                .testTag("new_round_button"),
-        ) {
-            Icon(
-                imageVector = Icons.Rounded.Refresh,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(stringResource(R.string.action_reset))
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                CeramicSectionLabel("Mode")
+                CeramicSegmented(
+                    options = listOf(
+                        GameMode.INFINITY to stringResource(R.string.mode_infinity),
+                        GameMode.CLASSIC to stringResource(R.string.mode_classic),
+                        GameMode.MISERE to stringResource(R.string.mode_misere),
+                    ),
+                    selected = uiState.mode,
+                    onSelect = onSelectMode,
+                )
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                CeramicSectionLabel("Opponent")
+                CeramicSegmented(
+                    options = listOf(
+                        OpponentType.AI to "Computer",
+                        OpponentType.PASS_AND_PLAY to "A friend",
+                    ),
+                    selected = uiState.opponentType,
+                    onSelect = onSelectOpponent,
+                )
+            }
+
+            if (uiState.opponentType == OpponentType.AI) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CeramicSectionLabel("Difficulty")
+                    CeramicChoiceChips(
+                        options = listOf(
+                            AiDifficulty.ADAPTIVE to stringResource(R.string.ai_adaptive),
+                            AiDifficulty.CASUAL to stringResource(R.string.ai_casual),
+                            AiDifficulty.TACTICAL to stringResource(R.string.ai_tactical),
+                            AiDifficulty.MASTER to stringResource(R.string.ai_master),
+                        ),
+                        selected = uiState.aiDifficulty,
+                        onSelect = onSelectDifficulty,
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Ceramic.Paper)
+                    .padding(horizontal = 16.dp, vertical = 2.dp),
+            ) {
+                CeramicSwitchRow(
+                    title = "Blitz clock",
+                    subtitle = "5 seconds per move",
+                    checked = uiState.isBlitzEnabled,
+                    onToggle = onToggleBlitz,
+                    testTag = "blitz_toggle_button",
+                )
+                if (uiState.opponentType == OpponentType.AI) {
+                    CeramicSwitchRow(
+                        title = "You go first",
+                        subtitle = if (uiState.humanSide == Player.X) "You play X" else "You play O",
+                        checked = uiState.humanSide == Player.X,
+                        onToggle = onSwapHumanSide,
+                        testTag = "swap_sides_button",
+                    )
+                }
+                CeramicSwitchRow(
+                    title = "Vibration",
+                    subtitle = "Feel each move and win",
+                    checked = uiState.hapticsEnabled,
+                    onToggle = onToggleHaptics,
+                    testTag = "haptics_toggle_button",
+                )
+            }
         }
     }
 }

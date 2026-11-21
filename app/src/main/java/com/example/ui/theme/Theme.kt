@@ -98,7 +98,7 @@ val TactixShapes = Shapes(
 
 @Composable
 fun TactixTheme(
-    darkTheme: Boolean = true,
+    darkTheme: Boolean = false,
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {

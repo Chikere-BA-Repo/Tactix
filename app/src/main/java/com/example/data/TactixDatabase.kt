@@ -27,7 +27,12 @@ abstract class TactixDatabase : RoomDatabase() {
                     context.applicationContext,
                     TactixDatabase::class.java,
                     "tactix_local.db",
-                ).fallbackToDestructiveMigration(dropAllTables = true).build().also {
+                )
+                    // Player ratings, medals and match history must survive app updates.
+                    // When the schema version goes up, add a Migration here instead of wiping data.
+                    // Only a downgrade (installing an older build over a newer one) resets the store.
+                    .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
+                    .build().also {
                     INSTANCE = it
                 }
             }
