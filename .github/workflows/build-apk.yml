@@ -7,6 +7,9 @@ on:
       - master
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-apk:
     name: Build Standalone Android APK
@@ -72,3 +75,16 @@ jobs:
           name: Tactix-APK
           path: apk-output/Tactix.apk
           retention-days: 30
+
+      - name: Publish APK as a GitHub release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' app/build.gradle.kts | head -1)
+          TAG="v${VERSION}-build${{ github.run_number }}"
+          cp apk-output/Tactix.apk "apk-output/Tactix-${VERSION}.apk"
+          gh release create "$TAG" "apk-output/Tactix-${VERSION}.apk" \
+            --target "$GITHUB_SHA" \
+            --title "Tactix ${VERSION} (build ${{ github.run_number }})" \
+            --notes "Debug build from commit ${GITHUB_SHA::7}. Install on Android by opening the APK and allowing installs from this source."
