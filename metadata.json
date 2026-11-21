@@ -1,0 +1,6 @@
+{
+  "name": "Tactix",
+  "description": "Modern minimalist Material You Tic-Tac-Toe featuring Classic 3x3 with Adaptive AI, Infinity 3-mark decay mode, Daily Tactical Puzzles & Streaks, smart move hints, and animated post-match replays.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

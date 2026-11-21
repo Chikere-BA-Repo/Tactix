@@ -1,0 +1,102 @@
+<resources>
+    <string name="app_name">Tactix</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_play">Play</string>
+    <string name="nav_daily">Puzzles</string>
+    <string name="nav_archive">Profile</string>
+
+    <!-- Brand & Splash -->
+    <string name="studio_name">Chikere Asogwa Solutions</string>
+    <string name="studio_crafted_by">A Chikere Asogwa Solutions Game</string>
+    <string name="splash_tagline">Outthink Every Move.</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_back">Back</string>
+    <string name="onboarding_start">Let\'s Play</string>
+    <string name="cd_how_to_play">How to play</string>
+    <string name="cd_back_to_modes">Back to modes</string>
+    <string name="cd_match_settings">Match options</string>
+
+    <!-- Home Mode Hub -->
+    <string name="home_choose_mode">Pick a Mode</string>
+    <string name="home_match_setup">Game Setup</string>
+    <string name="home_resume_match">Continue Your Match</string>
+    <string name="home_play_infinity">Play Infinity</string>
+    <string name="home_play_classic">Play Classic</string>
+    <string name="home_play_misere">Play Misère</string>
+    <string name="home_open_daily">Play Daily Puzzles</string>
+
+    <!-- Modes & Controls -->
+    <string name="mode_infinity">Infinity</string>
+    <string name="mode_classic">Classic</string>
+    <string name="mode_misere">Misère</string>
+    <string name="opponent_ai">Solo</string>
+    <string name="opponent_pass_play">2 Players</string>
+    <string name="ai_adaptive">Adaptive</string>
+    <string name="ai_casual">Easy</string>
+    <string name="ai_tactical">Hard</string>
+    <string name="ai_master">Master</string>
+
+    <!-- Gameplay Actions & Status -->
+    <string name="action_hint">Hint</string>
+    <string name="action_reset">New Round</string>
+    <string name="action_replay">Replay</string>
+    <string name="action_play_again">Play Again</string>
+    <string name="action_next_puzzle">Next Puzzle</string>
+    <string name="action_retry">Try Again</string>
+    <string name="action_start_rush">Start Puzzle Rush</string>
+    <string name="action_back_to_daily">Daily Set</string>
+    <string name="cd_toggle_haptics">Toggle vibration feedback</string>
+    <string name="cd_toggle_blitz">Toggle 5-second Blitz clock</string>
+    <string name="cd_share_match">Share match result</string>
+    <string name="cd_reset_board">Start a new round</string>
+    <string name="cd_request_hint">Show a move hint</string>
+    <string name="cd_close_replay">Close replay</string>
+    <string name="cd_step_back">Previous move</string>
+    <string name="cd_step_forward">Next move</string>
+    <string name="cd_play_pause_replay">Play or pause replay</string>
+    <string name="cd_delete_match">Delete match</string>
+    <string name="cd_swap_sides">Switch who goes first</string>
+    <string name="cd_mode_info">Infinity mode rule tip</string>
+
+    <!-- Labels & Descriptions -->
+    <string name="status_your_turn">Your move</string>
+    <string name="status_ai_thinking">Thinking…</string>
+    <string name="status_player_x_turn">Player X\'s turn</string>
+    <string name="status_player_o_turn">Player O\'s turn</string>
+    <string name="status_x_wins">X Wins!</string>
+    <string name="status_o_wins">O Wins!</string>
+    <string name="status_you_win">You Win!</string>
+    <string name="status_ai_wins">Outplayed</string>
+    <string name="status_draw">Tie Game</string>
+    <string name="status_timeout">Time\'s Up!</string>
+    <string name="infinity_rule_tip">Only 3 marks stay on the board — the pulsing one disappears next.</string>
+    <string name="classic_rule_tip">Get three in a row to take the round.</string>
+    <string name="misere_rule_tip">Reverse rules: making three in a row loses. Trap your opponent!</string>
+
+    <!-- Daily & Streak -->
+    <string name="daily_title">Daily Puzzles</string>
+    <string name="daily_streak_label">Day Streak</string>
+    <string name="daily_completed_banner">All Done Today!</string>
+    <string name="daily_completed_subtitle">Streak safe. Ready for endless Puzzle Rush?</string>
+    <string name="streak_rush_title">Puzzle Rush</string>
+    <string name="streak_rush_best">Best Run</string>
+    <string name="puzzle_solved_msg">Nailed it!</string>
+    <string name="puzzle_wrong_msg">Not quite — try another square or grab a hint.</string>
+
+    <!-- Archive & Replay -->
+    <string name="archive_title">Profile &amp; Replays</string>
+    <string name="archive_empty_title">No matches yet</string>
+    <string name="archive_empty_subtitle">Play a round in Infinity, Classic, or Misère to watch replays and track your progress.</string>
+    <string name="stat_elo">Rating</string>
+    <string name="stat_win_rate">Win Rate</string>
+    <string name="stat_matches">Matches</string>
+    <string name="stat_best_rush">Best Rush</string>
+    <string name="filter_all">All</string>
+    <string name="replay_studio_title">Match Replay</string>
+    <string name="replay_start_board">Opening Board</string>
+</resources>
